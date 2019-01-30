@@ -11,7 +11,7 @@ import AVFoundation
 import CommonCrypto
 import CryptoSwift
 
-class ViewController: UIViewController{
+class ViewController: UIViewController, AVCapturePhotoCaptureDelegate{
     
     
     
@@ -89,8 +89,8 @@ class ViewController: UIViewController{
             count = count + 1
         } else{
             timer.invalidate()
-            
-            print("done")
+            print("encrypting....")
+            enc(data: data)
             
         }
         
@@ -99,6 +99,30 @@ class ViewController: UIViewController{
         
     }
     
+    func enc(data: [Data]){
+        let key = "ccC2H19lDDbQDfakxcrtNMQdd0FloLGG" // length == 32
+        let iv = "ggGGHUiDD0Qjhuvv"
+        let fileName = "myFile.txt"
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+        for i in data{
+            guard let encrypted = try? ChaCha20(key: key, iv: iv).encrypt(i.bytes) else{
+                print("error")
+                return
+            }
+            
+            let data = Data(encrypted)
+            do {
+                try data.write(to: url, options: .atomic)
+            } catch {
+                print(error)
+            }
+            
+        }
+        
+        print("done")
+        
+        
+    }
     
     func setupCaptureSession() {
         captureSession.sessionPreset = AVCaptureSession.Preset.photo
@@ -198,34 +222,40 @@ class ViewController: UIViewController{
         }
     }
     
+    var data: [Data] = []
     
-    
-}
-
-extension ViewController: AVCapturePhotoCaptureDelegate {
-    
-
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        
+        
         if let imageData = photo.fileDataRepresentation() {
             image = UIImage(data: imageData)
+            data.append(imageData)
             
-            let key = "ccC2H19lDDbQDfakxcrtNMQdd0FloLGG" // length == 32
-            let iv = "ggGGHUiDD0Qjhuvv"
+//            let key = "ccC2H19lDDbQDfakxcrtNMQdd0FloLGG" // length == 32
+//            let iv = "ggGGHUiDD0Qjhuvv"
+//
+//            guard let encrypted = try? ChaCha20(key: key, iv: iv).encrypt(imageData.bytes) else{
+//                print("error")
+//                return
+//            }
+//
+//
+//            let fileName = "myFile.txt"
+//            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+//            //            let myText = "Some text to write to file"
+//            let data = Data(encrypted)
+//            do {
+//                try data.write(to: url, options: .atomic)
+//            } catch {
+//                print(error)
+//            }
+//
             
-            guard let encrypted = try? ChaCha20(key: key, iv: iv).encrypt(imageData.bytes) else{
-                print("error")
-                return
-            }
-            
-            let pointer = UnsafeBufferPointer(start:encrypted, count:8)
-            let data = Data(buffer:pointer)
-//            try! data.write(to: URL(fileURLWithPath: "myFile.data"))
-
-           
         }
     }
     
-    
 }
+
+
 
 
